@@ -62,77 +62,7 @@ export function runAllEngineUnitTests(): {
     });
   }
 
-  // 2. Round Straight Test
-  try {
-    const engine = EngineFactory.getEngine('round_straight');
-    const input: DuctCalculationInput = {
-      modelId: 'round_straight',
-      dimensions: { diameter: 400, length: 1000, crimpEnd: true as any },
-      material: 'galvanized',
-      gauge: 26,
-      longitudinalSeam: 'grooved_seam',
-      transverseConnector: 'raw_edge',
-    };
-    const res = engine.calculate(input);
-    const expectedBlankW = Math.PI * 400 + 20;
-    const actualBlankW = res.parts[0].blankWidthMm;
-    const passW = Math.abs(actualBlankW - expectedBlankW) < 1.5;
-
-    results.push({
-      engineId: 'round_straight',
-      testName: 'Round Duct Circumference & Pipe Lock Seam',
-      passed: passW,
-      expected: `${expectedBlankW.toFixed(1)} mm`,
-      actual: `${actualBlankW} mm`,
-      message: passW ? 'Accurate π x D + seam formula verified' : 'Circumference mismatch',
-    });
-  } catch (err: any) {
-    results.push({
-      engineId: 'round_straight',
-      testName: 'Round Straight Test Suite',
-      passed: false,
-      expected: 'Pass',
-      actual: String(err.message),
-    });
-  }
-
-  // 3. Round Segmented Elbow (Gore) Test
-  try {
-    const engine = EngineFactory.getEngine('round_segmented_elbow');
-    const input: DuctCalculationInput = {
-      modelId: 'round_segmented_elbow',
-      dimensions: { diameter: 400, centerlineRadius: 600, angleDeg: 90, numGores: 5 },
-      material: 'galvanized',
-      gauge: 24,
-      longitudinalSeam: 'grooved_seam',
-      transverseConnector: 'raw_edge',
-    };
-    const res = engine.calculate(input);
-    // For 5 gores, divisions = 2 * (5 - 1) = 8
-    // Miter angle = 90 / 8 = 11.25 deg
-    const expectedHalfMiter = 11.25;
-    const actualHalfMiter = parseFloat(String(res.dimensionsSummary['Miter Angle per Cut'] || res.dimensionsSummary['Half Miter Angle']));
-    const passMiter = Math.abs(actualHalfMiter - expectedHalfMiter) < 0.1;
-
-    results.push({
-      engineId: 'round_segmented_elbow',
-      testName: '5-Gore Elbow Half-Miter Angle Calculation',
-      passed: passMiter,
-      expected: `${expectedHalfMiter}°`,
-      actual: `${actualHalfMiter}°`,
-      message: passMiter ? 'Miter angle θ / [2*(N-1)] exact' : 'Miter angle error',
-    });
-  } catch (err: any) {
-    results.push({
-      engineId: 'round_segmented_elbow',
-      testName: 'Round Segmented Elbow Suite',
-      passed: false,
-      expected: 'Pass',
-      actual: String(err.message),
-    });
-  }
-
-  // 4. Square-to-Round Transition Test
+  // 2. Square-to-Round Transition Test
   try {
     const engine = EngineFactory.getEngine('square_to_round');
     const input: DuctCalculationInput = {
@@ -164,40 +94,7 @@ export function runAllEngineUnitTests(): {
     });
   }
 
-  // 5. Round Reducer Frustum Apex Angle Test
-  try {
-    const engine = EngineFactory.getEngine('round_concentric_reducer');
-    const input: DuctCalculationInput = {
-      modelId: 'round_concentric_reducer',
-      dimensions: { largeDiameter: 500, smallDiameter: 350, length: 400 },
-      material: 'galvanized',
-      gauge: 24,
-      longitudinalSeam: 'grooved_seam',
-      transverseConnector: 'raw_edge',
-    };
-    const res = engine.calculate(input);
-    const actualSweep = parseFloat(String(res.dimensionsSummary['Sweep Angle'] || res.dimensionsSummary['Apex Sweep Angle']));
-    const passSweep = actualSweep > 60 && actualSweep < 72;
-
-    results.push({
-      engineId: 'round_concentric_reducer',
-      testName: 'Conical Reducer Sector Sweep Angle',
-      passed: passSweep,
-      expected: '66.3° ± 2°',
-      actual: `${actualSweep}°`,
-      message: passSweep ? 'True apex radial line development confirmed' : 'Sweep angle mismatch',
-    });
-  } catch (err: any) {
-    results.push({
-      engineId: 'round_concentric_reducer',
-      testName: 'Round Reducer Suite',
-      passed: false,
-      expected: 'Pass',
-      actual: String(err.message),
-    });
-  }
-
-  // 6. 90° Radius Elbow Cheek & Arc Length Test
+  // 3. 90° Radius Elbow Cheek & Arc Length Test
   try {
     const engine = EngineFactory.getEngine('rect_radius_elbow');
     const input: DuctCalculationInput = {
@@ -230,7 +127,7 @@ export function runAllEngineUnitTests(): {
     });
   }
 
-  // 7. Manufacturing Validation Engine: Negative Throat Radius Test
+  // 4. Manufacturing Validation Engine: Negative Throat Radius Test
   try {
     const invalidElbow: DuctCalculationInput = {
       modelId: 'rect_radius_elbow',
@@ -263,106 +160,7 @@ export function runAllEngineUnitTests(): {
     });
   }
 
-  // 8. Manufacturing Validation Engine: Segmented Elbow Negative Throat (R_cl <= D/2)
-  try {
-    const invalidGore: DuctCalculationInput = {
-      modelId: 'round_segmented_elbow',
-      dimensions: { diameter: 400, centerlineRadius: 180, numGores: 4, angleDeg: 90 },
-      material: 'galvanized',
-      gauge: 24,
-      longitudinalSeam: 'grooved_seam',
-      transverseConnector: 'raw_edge',
-    };
-    const valRes = ManufacturingValidationEngine.validate(invalidGore);
-    const hasGoreThroatError = valRes.issues.some(
-      i => i.fieldId === 'centerlineRadius' && i.category === 'NEGATIVE_RADIUS'
-    );
-
-    results.push({
-      engineId: 'round_segmented_elbow',
-      testName: 'Manufacturing Engine: Inside Gore Inversion (R_cl <= D/2)',
-      passed: hasGoreThroatError,
-      expected: 'Flagged NEGATIVE_RADIUS Error on centerlineRadius',
-      actual: hasGoreThroatError ? 'Error correctly flagged' : 'Failed to flag gore inversion',
-      message: hasGoreThroatError ? 'Throat R = 180 - 200 = -20mm successfully blocked' : 'Missed gore clash',
-    });
-  } catch (err: any) {
-    results.push({
-      engineId: 'round_segmented_elbow',
-      testName: 'Manufacturing Validation Engine Gore Throat',
-      passed: false,
-      expected: 'Pass',
-      actual: String(err.message),
-    });
-  }
-
-  // 9. Manufacturing Validation Engine: Acute-Angle Crotch Intersection (< 20°)
-  try {
-    const invalidWye: DuctCalculationInput = {
-      modelId: 'wye_branch',
-      dimensions: { inletDiameter: 450, branchDiameter: 300, totalAngle: 15, legLength: 400 },
-      material: 'galvanized',
-      gauge: 24,
-      longitudinalSeam: 'pittsburgh',
-      transverseConnector: 'raw_edge',
-    };
-    const valRes = ManufacturingValidationEngine.validate(invalidWye);
-    const hasAcuteAngleError = valRes.issues.some(
-      i => i.fieldId === 'totalAngle' && i.category === 'ACUTE_ANGLE_INTERSECTION'
-    );
-
-    results.push({
-      engineId: 'wye_branch',
-      testName: 'Manufacturing Engine: Acute Crotch Angle (< 20°) Rejection',
-      passed: hasAcuteAngleError,
-      expected: 'Flagged ACUTE_ANGLE_INTERSECTION Error on totalAngle',
-      actual: hasAcuteAngleError ? 'Error correctly flagged' : 'Failed to flag acute angle',
-      message: hasAcuteAngleError ? 'Prevented unreachable tool clash in acute crotch' : 'Missed acute angle',
-    });
-  } catch (err: any) {
-    results.push({
-      engineId: 'wye_branch',
-      testName: 'Manufacturing Validation Engine Acute Angle',
-      passed: false,
-      expected: 'Pass',
-      actual: String(err.message),
-    });
-  }
-
-  // 10. Manufacturing Validation Engine: Flat Oval Inverted Axes (Major < Minor)
-  try {
-    const invalidOval: DuctCalculationInput = {
-      modelId: 'oval_straight',
-      dimensions: { majorAxis: 300, minorAxis: 500, length: 1200 },
-      material: 'galvanized',
-      gauge: 24,
-      longitudinalSeam: 'grooved_seam',
-      transverseConnector: 'raw_edge',
-    };
-    const valRes = ManufacturingValidationEngine.validate(invalidOval);
-    const hasOvalError = valRes.issues.some(
-      i => i.fieldId === 'majorAxis' && i.category === 'GEOMETRIC_IMPOSSIBILITY'
-    );
-
-    results.push({
-      engineId: 'oval_straight',
-      testName: 'Manufacturing Engine: Flat Oval Negative Flat Length Rejection',
-      passed: hasOvalError,
-      expected: 'Flagged GEOMETRIC_IMPOSSIBILITY Error on majorAxis',
-      actual: hasOvalError ? 'Error correctly flagged' : 'Failed to flag inverted axes',
-      message: hasOvalError ? 'Negative flat length (300 - 500 = -200mm) blocked' : 'Missed oval inversion',
-    });
-  } catch (err: any) {
-    results.push({
-      engineId: 'oval_straight',
-      testName: 'Manufacturing Validation Engine Oval Axes',
-      passed: false,
-      expected: 'Pass',
-      actual: String(err.message),
-    });
-  }
-
-  // 11. Manufacturing Validation Engine: Auto-Fix Correction
+  // 5. Manufacturing Validation Engine: Auto-Fix Correction
   try {
     const brokenInput: DuctCalculationInput = {
       modelId: 'rect_radius_elbow',

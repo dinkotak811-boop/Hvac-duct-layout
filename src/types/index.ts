@@ -14,31 +14,21 @@ export type DuctCategory =
 export type DuctModelId =
   // Straight
   | 'rect_straight'
-  | 'round_straight'
-  | 'oval_straight'
   // Elbow
   | 'rect_radius_elbow'
   | 'rect_square_elbow'
   | 'rect_45_elbow'
-  | 'round_segmented_elbow'
   // Tee
   | 'rect_straight_tee'
   | 'rect_reducing_tee'
-  | 'round_90_tee'
-  | 'wye_branch'
-  | 'lateral_tee'
   // Reducer / Transition
   | 'rect_concentric_reducer'
   | 'rect_eccentric_reducer'
-  | 'round_concentric_reducer'
   | 'square_to_round'
-  | 'oval_to_round'
   // Offset
   | 'rect_offset'
-  | 'round_offset'
   // Branch
   | 'rect_45_branch'
-  | 'round_saddle_branch'
   // Special
   | 'plenum_box'
   | 'register_boot'

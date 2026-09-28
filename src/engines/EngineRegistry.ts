@@ -2,17 +2,11 @@ import { DuctCalculationEngine } from './DuctCalculationEngine';
 import { DuctCategory, DuctModelId } from '../types';
 
 import { RectangularStraightEngine } from './RectangularStraightEngine';
-import { RoundStraightEngine } from './RoundStraightEngine';
-import { OvalStraightEngine } from './OvalStraightEngine';
 import { RectangularRadiusElbowEngine } from './RectangularRadiusElbowEngine';
 import { RectangularSquareElbowEngine } from './RectangularSquareElbowEngine';
-import { RoundSegmentedElbowEngine } from './RoundSegmentedElbowEngine';
 import { SquareToRoundEngine } from './SquareToRoundEngine';
-import { RoundReducerEngine } from './RoundReducerEngine';
 import { RectangularReducerEngine } from './RectangularReducerEngine';
-import { RoundTeeEngine } from './RoundTeeEngine';
 import { RectangularTeeEngine } from './RectangularTeeEngine';
-import { WyeBranchEngine } from './WyeBranchEngine';
 import { RectangularOffsetEngine } from './RectangularOffsetEngine';
 import { RegisterBootEngine } from './RegisterBootEngine';
 import { PlenumBoxEngine } from './PlenumBoxEngine';
@@ -32,28 +26,28 @@ export const DUCT_CATEGORIES: DuctCategoryInfo[] = [
     id: 'straight',
     name: 'Straight Ducts',
     nameBn: 'সোজা ডাক্ট (Straight)',
-    description: 'Rectangular, Round, and Flat Oval straight sections',
+    description: 'Rectangular straight sections (1-piece wrap, 2-piece L, 4-piece panels)',
     iconName: 'Maximize2',
   },
   {
     id: 'elbow',
     name: 'Elbows & Bends',
     nameBn: 'এলবো ও বেন্ড (Elbows)',
-    description: '90°/45° Radius, Square Throat, and Lobster Back Gores',
+    description: '90°/45° radius elbows and square throat miters with turning vanes',
     iconName: 'CornerDownRight',
   },
   {
     id: 'tee',
     name: 'Tees & Branches',
     nameBn: 'টি ও ব্রাঞ্চ (Tees & Branches)',
-    description: 'Straight Tee, Reducing Tee, 90° Fish-Mouth, and Wye Pant Leg',
+    description: 'Rectangular straight and reducing tees with tabbed branch collars',
     iconName: 'GitFork',
   },
   {
     id: 'reducer',
     name: 'Reducers & Transitions',
     nameBn: 'রিডিউসার ও ট্রানজিশন',
-    description: 'Square-to-Round Triangulation, Conical, and Rectangular Tapers',
+    description: 'Rectangular tapers (concentric/FOB/FOT/FOS) and square-to-round triangulation',
     iconName: 'Minimize2',
   },
   {
@@ -81,17 +75,11 @@ class CalculationEngineFactory {
 
   private registerDefaults() {
     this.register(new RectangularStraightEngine());
-    this.register(new RoundStraightEngine());
-    this.register(new OvalStraightEngine());
     this.register(new RectangularRadiusElbowEngine());
     this.register(new RectangularSquareElbowEngine());
-    this.register(new RoundSegmentedElbowEngine());
     this.register(new SquareToRoundEngine());
-    this.register(new RoundReducerEngine());
     this.register(new RectangularReducerEngine());
-    this.register(new RoundTeeEngine());
     this.register(new RectangularTeeEngine());
-    this.register(new WyeBranchEngine());
     this.register(new RectangularOffsetEngine());
     this.register(new RegisterBootEngine());
     this.register(new PlenumBoxEngine());

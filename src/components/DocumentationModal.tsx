@@ -12,7 +12,7 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
   onClose,
   lang,
 }) => {
-  const [activeTab, setActiveTab] = useState<'triangulation' | 'gore' | 'bends' | 'seams' | 'smacna'>('triangulation');
+  const [activeTab, setActiveTab] = useState<'triangulation' | 'bends' | 'seams' | 'smacna'>('triangulation');
 
   if (!isOpen) return null;
 
@@ -46,7 +46,6 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
         <div className="bg-slate-950 px-6 border-b border-slate-800 flex space-x-2 overflow-x-auto py-2 shrink-0">
           {[
             { id: 'triangulation', label: 'Square-to-Round Triangulation', labelBn: 'ট্রায়াঙ্গুলেশন মেথড' },
-            { id: 'gore', label: 'Gore Lobster-Back Sine Miter', labelBn: 'গোর এলবো সাইন মাইটার' },
             { id: 'bends', label: 'Bend Deduction & K-Factor', labelBn: 'বেন্ড ডিডাকশন ও K-ফ্যাক্টর' },
             { id: 'seams', label: 'Pittsburgh & TDC Seam Standards', labelBn: 'পিটসবার্গ ও TDC সিম' },
             { id: 'smacna', label: 'SMACNA Duct Construction Spec', labelBn: 'SMACNA কনস্ট্রাকশন স্পেক' },
@@ -98,46 +97,6 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
 
               <p>
                 The flat pattern unfolds by constructing triangles sequentially using the chord distance along the top circle and the computed true slant lengths from each base corner. Scored press brake bend lines guide the bump-bending process.
-              </p>
-            </div>
-          )}
-
-          {activeTab === 'gore' && (
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold text-white flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-                <span>Lobster Back Segmented Elbow Miter Angle & Sine Cut Line</span>
-              </h4>
-              <p>
-                A segmented round elbow of N gores consists of 2 end half-gores and (N - 2) middle full gores.
-              </p>
-
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-emerald-300 space-y-2">
-                <div>1. Half-Miter Cut Angle:</div>
-                <div className="text-amber-400 pl-4 font-bold">
-                  α = θ_total / [ 2 · (N_gores - 1) ]
-                </div>
-                <div className="text-slate-400 pl-4">
-                  (Example: For 90° 5-gore elbow: α = 90° / 8 = 11.25°)
-                </div>
-                <div>2. Middle Full Gore Joint Angle:</div>
-                <div className="text-slate-400 pl-4">
-                  2α = 2 · 11.25° = 22.50°
-                </div>
-                <div>3. Sine Miter Cut Height along Flat Circumference x ∈ [0, πD]:</div>
-                <div className="text-emerald-400 pl-4 font-bold">
-                  Y_cut(x) = Y_baseline + (D / 2) · tan(α) · cos( 2π · x / (πD) )
-                </div>
-                <div>4. Centerline, Heel & Throat Heights for Middle Gore:</div>
-                <div className="text-slate-400 pl-4">
-                  H_center = 2 · R · tan(α)<br />
-                  H_heel &nbsp;&nbsp;= 2 · (R + D/2) · tan(α)<br />
-                  H_throat = 2 · (R - D/2) · tan(α)
-                </div>
-              </div>
-
-              <p>
-                Because the development follows a true sinusoidal curve, laser or CNC plasma cutting yields flawless mating joints ready for lock seaming or rotary swaging.
               </p>
             </div>
           )}
