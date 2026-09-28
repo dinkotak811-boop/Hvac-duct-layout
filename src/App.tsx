@@ -22,22 +22,30 @@ import { NestingPreview } from './components/NestingPreview';
 import { DocumentationModal } from './components/DocumentationModal';
 import { UnitTestsModal } from './components/UnitTestsModal';
 import { ProjectManagerModal } from './components/ProjectManagerModal';
-import { 
-  Maximize2, 
-  Box, 
-  Columns, 
-  CheckCircle2, 
+import { ExportPanel } from './components/ExportPanel';
+import {
+  Maximize2,
+  Box,
+  Columns,
+  CheckCircle2,
   AlertCircle,
   AlertOctagon,
-  ShieldCheck
+  ShieldCheck,
+  Settings2,
+  Share2,
 } from 'lucide-react';
+
+type MobilePane = 'params' | 'design' | 'export';
 
 export default function App() {
   const [lang, setLang] = useState<'en' | 'bn'>('en');
   const [selectedCategory, setSelectedCategory] = useState<DuctCategory>('straight');
   const [selectedModelId, setSelectedModelId] = useState<DuctModelId>('rect_straight');
   const [selectedPartIndex, setSelectedPartIndex] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<'split' | '2d' | '3d'>('split');
+  const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const [viewMode, setViewMode] = useState<'split' | '2d' | '3d'>(isSmallScreen ? '2d' : 'split');
+  // Mobile/tablet only: which pane of the workspace is visible (desktop shows all).
+  const [mobilePane, setMobilePane] = useState<MobilePane>('params');
 
   // Modals
   const [isDocsOpen, setIsDocsOpen] = useState<boolean>(false);
@@ -131,6 +139,13 @@ export default function App() {
         onOpenNesting={() => setIsNestingOpen(true)}
         onResetDefaults={handleResetDefaults}
         onOpenProjectManager={() => setIsProjectOpen(true)}
+        onOpenExport={() => {
+          setMobilePane('export');
+          window.setTimeout(
+            () => document.getElementById('export')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+            50,
+          );
+        }}
       />
 
       {/* 2. Model Selection Banner */}
@@ -143,7 +158,30 @@ export default function App() {
       />
 
       {/* 3. Main Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4">
+        {/* Mobile / tablet pane switcher (desktop shows every pane at once) */}
+        <nav className="lg:hidden sticky top-14 z-20 -mx-3 px-3 py-2 bg-slate-950/95 backdrop-blur border-b border-slate-800">
+          <div className="grid grid-cols-3 gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
+            {([
+              { id: 'params', label: lang === 'bn' ? 'প্যারামিটার' : 'Parameters', Icon: Settings2 },
+              { id: 'design', label: lang === 'bn' ? 'ডিজাইন' : 'Design', Icon: Columns },
+              { id: 'export', label: lang === 'bn' ? 'এক্সপোর্ট' : 'Export', Icon: Share2 },
+            ] as { id: MobilePane; label: string; Icon: typeof Settings2 }[]).map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setMobilePane(tab.id)}
+                aria-current={mobilePane === tab.id}
+                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs font-medium transition cursor-pointer ${
+                  mobilePane === tab.id ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <tab.Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
         {/* Workspace View Mode Selector & Metadata Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-850">
           {/* Clean Unboxed Metadata */}
@@ -167,8 +205,8 @@ export default function App() {
             </span>
           </div>
 
-          {/* View Mode Toggle: 2D Pattern / 3D Model / Split / BOM */}
-          <div className="flex items-center space-x-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+          {/* View Mode Toggle: 2D Pattern / 3D Model / Split */}
+          <div className={`${mobilePane === 'design' ? 'flex' : 'hidden'} lg:flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5 overflow-x-auto scrollbar-none`}>
             <button
               onClick={() => setViewMode('2d')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer ${
@@ -203,9 +241,9 @@ export default function App() {
         </div>
 
         {/* Core Layout Grid: Parameters on Left, CAD Viewers on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start">
           {/* Left Parameter Form Column (4 cols) */}
-          <div className="lg:col-span-4 xl:col-span-4 space-y-4">
+          <div className={`${mobilePane === 'params' ? 'block' : 'hidden'} lg:block lg:col-span-4 xl:col-span-4 space-y-4`}>
             <ParameterForm
               engine={currentEngine}
               inputs={inputs}
@@ -215,12 +253,12 @@ export default function App() {
           </div>
 
           {/* Right CAD Viewport Column (8 cols) */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-5">
+          <div className={`${mobilePane === 'design' ? 'block' : 'hidden'} lg:block lg:col-span-8 xl:col-span-8 space-y-4 lg:space-y-5`}>
             {/* Viewports */}
             {viewMode === 'split' && (
               <div className="space-y-4">
                 {/* 2D Flat Pattern Canvas */}
-                <div style={{ height: '500px' }}>
+                <div className="h-[60vh] min-h-[320px] lg:h-[500px]">
                   <Pattern2DViewer
                     result={calculationResult}
                     selectedPartIndex={selectedPartIndex}
@@ -232,7 +270,7 @@ export default function App() {
                 </div>
 
                 {/* 3D Model Canvas */}
-                <div style={{ height: '360px' }}>
+                <div className="h-[45vh] min-h-[280px] lg:h-[360px]">
                   <Model3DViewer
                     result={calculationResult}
                     lang={lang}
@@ -242,7 +280,7 @@ export default function App() {
             )}
 
             {viewMode === '2d' && (
-              <div style={{ height: '620px' }}>
+              <div className="h-[70vh] min-h-[380px] lg:h-[620px]">
                 <Pattern2DViewer
                   result={calculationResult}
                   selectedPartIndex={selectedPartIndex}
@@ -255,7 +293,7 @@ export default function App() {
             )}
 
             {viewMode === '3d' && (
-              <div style={{ height: '600px' }}>
+              <div className="h-[70vh] min-h-[380px] lg:h-[600px]">
                 <Model3DViewer
                   result={calculationResult}
                   lang={lang}
@@ -269,6 +307,16 @@ export default function App() {
               lang={lang}
             />
           </div>
+        </div>
+
+        {/* 4. Export Center (own section, full width) */}
+        <div className={`${mobilePane === 'export' ? 'block' : 'hidden'} lg:block`}>
+          <ExportPanel
+            result={calculationResult}
+            inputs={inputs}
+            selectedPartIndex={selectedPartIndex}
+            lang={lang}
+          />
         </div>
       </main>
 

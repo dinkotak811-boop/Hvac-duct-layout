@@ -8,19 +8,11 @@ import {
   MaterialType 
 } from '../types';
 import { MATERIALS, GAUGE_TABLE, getGaugeThickness, getSmacnaRecommendedGauge } from '../standards/materials';
-import { downloadDxf, downloadCompleteDxf } from '../exporters/dxfExporter';
-import { downloadSvg, downloadCompleteSvg } from '../exporters/svgExporter';
-import { generatePdfReport, generateCompletePdfReport } from '../exporters/pdfExporter';
-import { downloadCsvCutList } from '../exporters/csvExporter';
 import { extractPointToPointSegments, PointToPointSegment, formatPoint } from '../standards/pointToPointDimensions';
 import { 
   ZoomIn, 
   ZoomOut, 
   Maximize, 
-  FileCode, 
-  FileSpreadsheet, 
-  FileText, 
-  Download,
   Eye, 
   Grid, 
   Ruler, 
@@ -270,6 +262,73 @@ export const Pattern2DViewer: React.FC<Pattern2DViewerProps> = ({
   };
 
   const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  // ---- Touch: one finger pans, two fingers pinch-zoom (mobile / tablet) ----
+  const touchStateRef = useRef<{
+    mode: 'none' | 'pan' | 'pinch';
+    startX: number;
+    startY: number;
+    startDist: number;
+    startZoom: number;
+    startPan: { x: number; y: number };
+    centerX: number;
+    centerY: number;
+  }>({ mode: 'none', startX: 0, startY: 0, startDist: 0, startZoom: 1, startPan: { x: 0, y: 0 }, centerX: 0, centerY: 0 });
+
+  const touchDistance = (t1: React.Touch, t2: React.Touch) =>
+    Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    if (e.touches.length === 1) {
+      touchStateRef.current = {
+        ...touchStateRef.current,
+        mode: 'pan',
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        startPan: { ...pan },
+      };
+    } else if (e.touches.length === 2) {
+      const [t1, t2] = [e.touches[0], e.touches[1]];
+      touchStateRef.current = {
+        mode: 'pinch',
+        startX: 0,
+        startY: 0,
+        startDist: touchDistance(t1, t2) || 1,
+        startZoom: zoom,
+        startPan: { ...pan },
+        centerX: (t1.clientX + t2.clientX) / 2 - rect.left,
+        centerY: (t1.clientY + t2.clientY) / 2 - rect.top,
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const st = touchStateRef.current;
+    if (st.mode === 'pan' && e.touches.length === 1) {
+      e.preventDefault();
+      setPan({
+        x: st.startPan.x + (e.touches[0].clientX - st.startX),
+        y: st.startPan.y + (e.touches[0].clientY - st.startY),
+      });
+    } else if (st.mode === 'pinch' && e.touches.length === 2) {
+      e.preventDefault();
+      const dist = touchDistance(e.touches[0], e.touches[1]) || 1;
+      const newZoom = Math.min(Math.max((st.startZoom * dist) / st.startDist, 0.04), 10);
+      const k = newZoom / st.startZoom;
+      setZoom(newZoom);
+      setPan({
+        x: st.centerX - (st.centerX - st.startPan.x) * k,
+        y: st.centerY - (st.centerY - st.startPan.y) * k,
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStateRef.current.mode = 'none';
     setIsDragging(false);
   };
 
@@ -637,48 +696,6 @@ export const Pattern2DViewer: React.FC<Pattern2DViewerProps> = ({
           ))}
         </div>
 
-        {/* Clean Export Buttons Group */}
-        <div className="flex items-center space-x-1">
-          {/* DXF */}
-          <button
-            onClick={() => downloadCompleteDxf(result)}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700/70 transition cursor-pointer"
-            title="Download AutoCAD DXF with Flat Cutting Patterns"
-          >
-            <FileCode className="w-3.5 h-3.5 text-emerald-400" />
-            <span>DXF</span>
-          </button>
-
-          {/* SVG */}
-          <button
-            onClick={() => downloadCompleteSvg(result)}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700/70 transition cursor-pointer"
-            title="Download Vector Graphic (SVG)"
-          >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
-            <span>SVG</span>
-          </button>
-
-          {/* PDF */}
-          <button
-            onClick={() => generateCompletePdfReport(result)}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700/70 transition cursor-pointer"
-            title="Generate Engineering PDF Work Order Report"
-          >
-            <FileText className="w-3.5 h-3.5 text-rose-400" />
-            <span>PDF</span>
-          </button>
-
-          {/* CSV */}
-          <button
-            onClick={() => downloadCsvCutList(result, `${result.modelId}_cut_list.csv`)}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/70 transition cursor-pointer"
-            title="Export CSV Cut List for Shear & ERP"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
-            <span>CSV</span>
-          </button>
-        </div>
       </div>
 
       {/* Sub-Toolbar: Clean Layer Toggles & Measure/Zoom Controls */}
@@ -828,10 +845,14 @@ export const Pattern2DViewer: React.FC<Pattern2DViewerProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        className={`relative flex-1 bg-slate-950 overflow-hidden ${
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        className={`relative flex-1 bg-slate-950 overflow-hidden touch-none ${
           measureMode ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
-        style={{ minHeight: '450px' }}
+        style={{ minHeight: '220px' }}
       >
         <svg
           className="w-full h-full"

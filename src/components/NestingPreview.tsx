@@ -32,8 +32,8 @@ export const NestingPreview: React.FC<NestingPreviewProps> = ({
   const scrapPercentage = ((scrapAreaM2 / totalPurchasedSheetAreaM2) * 100).toFixed(1);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl space-y-0 text-slate-200">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full overflow-y-auto max-h-[92vh] shadow-2xl space-y-0 text-slate-200">
         {/* Header */}
         <div className="bg-slate-850 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">

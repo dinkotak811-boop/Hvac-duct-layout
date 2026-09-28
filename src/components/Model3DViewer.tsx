@@ -176,6 +176,71 @@ export const Model3DViewer: React.FC<Model3DViewerProps> = ({ result, lang }) =>
       updateCamera();
     };
 
+    // Touch handlers: 1 finger orbits, 2 fingers pinch-zoom + pan (mobile / tablet)
+    let touchMode: 'none' | 'orbit' | 'pinch' = 'none';
+    let lastTouch = { x: 0, y: 0 };
+    let lastPinchDist = 0;
+
+    const dist2 = (t1: Touch, t2: Touch) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        touchMode = 'orbit';
+        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        touchMode = 'pinch';
+        lastPinchDist = dist2(e.touches[0], e.touches[1]) || 1;
+        lastTouch = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchMode === 'orbit' && e.touches.length === 1) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - lastTouch.x;
+        const dy = e.touches[0].clientY - lastTouch.y;
+        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        sphericalRef.current.theta -= dx * 0.008;
+        sphericalRef.current.phi = Math.max(0.08, Math.min(Math.PI - 0.08, sphericalRef.current.phi - dy * 0.008));
+        updateCamera();
+      } else if (touchMode === 'pinch' && e.touches.length === 2) {
+        e.preventDefault();
+        const d = dist2(e.touches[0], e.touches[1]) || 1;
+        const factor = lastPinchDist / d;
+        lastPinchDist = d;
+        sphericalRef.current.radius = Math.max(150, Math.min(8000, sphericalRef.current.radius * factor));
+
+        // Two-finger drag pans the model
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const dx = cx - lastTouch.x;
+        const dy = cy - lastTouch.y;
+        lastTouch = { x: cx, y: cy };
+
+        const panSpeed = sphericalRef.current.radius * 0.001;
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+        const up = camera.up.clone().normalize();
+        panOffsetRef.current.addScaledVector(right, -dx * panSpeed);
+        panOffsetRef.current.addScaledVector(up, dy * panSpeed);
+
+        updateCamera();
+      }
+    };
+
+    const onTouchEnd = () => {
+      touchMode = 'none';
+    };
+
+    dom.addEventListener('touchstart', onTouchStart, { passive: true });
+    dom.addEventListener('touchmove', onTouchMove, { passive: false });
+    dom.addEventListener('touchend', onTouchEnd);
+    dom.addEventListener('touchcancel', onTouchEnd);
+
     dom.addEventListener('mousedown', onMouseDown);
     dom.addEventListener('contextmenu', onContextMenu);
     window.addEventListener('mousemove', onMouseMove);
@@ -192,6 +257,10 @@ export const Model3DViewer: React.FC<Model3DViewerProps> = ({ result, lang }) =>
     };
     window.addEventListener('resize', handleResize);
 
+    // Container-size changes (mobile pane switch, split/2D/3D toggle, rotation)
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(handleResize) : null;
+    if (resizeObserver && mountRef.current) resizeObserver.observe(mountRef.current);
+
     return () => {
       if (reqIdRef.current) cancelAnimationFrame(reqIdRef.current);
       dom.removeEventListener('mousedown', onMouseDown);
@@ -199,7 +268,12 @@ export const Model3DViewer: React.FC<Model3DViewerProps> = ({ result, lang }) =>
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       dom.removeEventListener('wheel', onWheel);
+      dom.removeEventListener('touchstart', onTouchStart);
+      dom.removeEventListener('touchmove', onTouchMove);
+      dom.removeEventListener('touchend', onTouchEnd);
+      dom.removeEventListener('touchcancel', onTouchEnd);
       window.removeEventListener('resize', handleResize);
+      resizeObserver?.disconnect();
       if (renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
       }
@@ -439,7 +513,7 @@ export const Model3DViewer: React.FC<Model3DViewerProps> = ({ result, lang }) =>
       {/* 3D WebGL Canvas Viewport */}
       <div 
         ref={mountRef} 
-        className="flex-1 w-full relative overflow-hidden cursor-grab active:cursor-grabbing"
+        className="flex-1 w-full relative overflow-hidden touch-none cursor-grab active:cursor-grabbing"
         style={{ minHeight: '450px' }}
       >
         {/* Overlay Navigation Help */}
