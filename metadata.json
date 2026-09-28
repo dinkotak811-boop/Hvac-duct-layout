@@ -1,0 +1,6 @@
+{
+  "name": "AeroDuct CAD/CAM - HVAC Duct Fabrication & Flat Pattern Layout Engine",
+  "description": "Professional HVAC sheet metal duct fabrication layout software with dedicated 2D/3D flat pattern calculation engines, SMACNA seam allowances, DXF/SVG/PDF export, and CNC cut lists.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
