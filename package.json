@@ -10,7 +10,8 @@
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:single": "vite build --config vite.config.single.ts && node scripts/inline-single-file.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

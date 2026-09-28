@@ -7,10 +7,18 @@ HVAC **rectangular** sheet-metal duct fabrication & flat-pattern (development) l
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build      # production build → dist/
-npm run typecheck  # tsc --noEmit
+npm run dev           # http://localhost:3000
+npm run build         # production build → dist/
+npm run build:single  # single offline file → aeroduct-standalone.html
+npm run typecheck     # tsc --noEmit
 ```
+
+### Single-file offline build
+
+`npm run build:single` পুরো অ্যাপ (JS + CSS) একটা ফাইলে ইনলাইন করে
+**`aeroduct-standalone.html`** বানায় (~1.8 MB)। ফাইলটা ফোনে/পিসিতে ডাউনলোড করে
+সরাসরি ব্রাউজারে খুললেই চলে — কোনো সার্ভার, ইন্টারনেট বা ইনস্টল লাগে না।
+এক্সপোর্ট (DXF/SVG/PDF/CSV/JSON), 2D/3D ভিউ, প্রজেক্ট সেভ — সবই অফলাইনে কাজ করে।
 
 ## Tech stack
 
